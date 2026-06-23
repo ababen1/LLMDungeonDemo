@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LLM Dungeon Generator</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/ui/ui.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar">
+        <h1>Dungeon Generator</h1>
+        <label>
+          Seed
+          <input id="seed" type="number" min="0" max="999999" value="42" />
+        </label>
+        <label>
+          Difficulty: <span id="difficulty-label">3</span>
+          <input id="difficulty" type="range" min="1" max="5" step="1" value="3" />
+        </label>
+        <label>
+          Density: <span id="density-label">3</span>
+          <input id="density" type="range" min="1" max="5" step="1" value="3" />
+        </label>
+        <button id="generate">Generate</button>
+        <div id="status" class="status status-idle">Ready.</div>
+        <div id="log-panel">
+          <div class="log-header">
+            <span>Log</span>
+            <button id="clear-log" type="button">Clear</button>
+          </div>
+          <div id="log" class="log-content" aria-live="polite"></div>
+        </div>
+      </aside>
+      <main id="canvas-container">
+        <div id="map-legend" class="map-legend"></div>
+        <canvas id="dungeon-canvas"></canvas>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
