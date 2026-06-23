@@ -36,6 +36,7 @@ Same `seed`, `difficulty`, and `density` produce functionally identical layouts:
 - `temperature = 0` on all LLM calls
 - Provider `seed` parameter when supported (OpenAI only; Groq uses prompt + compiler determinism)
 - Deterministic prompt content and geometry compilation from seed
+- **Difficulty** controls room count (4–6 rooms); **density** controls grid size (10×10 at high density, 25×25 at low)
 - Identical provider + model version recommended for exact LLM topology reproduction
 
 ## Scripts

@@ -30,9 +30,9 @@ const noopLogger = {
 
 /**
  * @param {{ seed: number, difficulty: number, density: number }} params
- * @param {{ onStatus: (msg: string, type?: string) => void, renderer: { render: (d: object) => void }, log?: DungeonLogger }} ctx
+ * @param {{ onStatus: (msg: string, type?: string) => void, onDungeon?: (dungeon: object) => void, renderer: { render: (d: object) => void }, log?: DungeonLogger }} ctx
  */
-export async function generateDungeon(params, { onStatus, renderer, log = noopLogger }) {
+export async function generateDungeon(params, { onStatus, onDungeon, renderer, log = noopLogger }) {
   const deadline = new Deadline(GLOBAL_TIMEOUT_MS);
 
   try {
@@ -197,6 +197,7 @@ export async function generateDungeon(params, { onStatus, renderer, log = noopLo
     }
 
     renderer.render(compiled);
+    onDungeon?.(compiled);
     const summary = `${compiled.rooms.length} rooms, ${compiled.corridors.length} corridors, grid ${derived.gridW}×${derived.gridH}`;
     const elapsed = deadline.elapsed();
     log.step('Render complete', { summary, elapsedMs: elapsed });

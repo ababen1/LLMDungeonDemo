@@ -6,8 +6,8 @@ export function buildUserPrompt(ctx) {
   return `Generate a dungeon layout with these parameters:
 
 seed: ${seed}
-difficulty: ${difficulty} (1=easiest, 5=hardest)
-density: ${density} (1=sparse, 5=compact)
+difficulty: ${difficulty} (1=fewest rooms ~4, 5=most rooms ~6; corridors not counted)
+density: ${density} (1=largest grid 25×25, 5=smallest grid 10×10)
 
 DERIVED TARGETS (follow exactly):
 - targetRoomCount: ${derived.targetRoomCount} (includes spawn, exit, key; add treasure if count >= 5; fill remainder with type "connector")

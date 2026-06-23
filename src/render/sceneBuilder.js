@@ -45,7 +45,9 @@ export function buildScene(dungeon) {
     }
 
     const label = TYPE_LABELS[room.type] ?? room.type;
-    group.add(createTextSprite(label, rx + rw / 2, ry + rh / 2, rw, rh));
+    if (room.type !== 'connector') {
+      group.add(createTextSprite(label, rx + rw / 2, ry + rh / 2, rw, rh));
+    }
   }
 
   const doorPos = dungeon.doors[0]?.position;
@@ -79,8 +81,8 @@ function createTextSprite(text, cx, cz, rw, rh) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return new THREE.Group();
 
-  const fontSize = 22;
-  const padding = 10;
+  const fontSize = 15;
+  const padding = 8;
   ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
   const textWidth = ctx.measureText(text).width;
   canvas.width = Math.ceil(textWidth + padding * 2);
@@ -104,7 +106,7 @@ function createTextSprite(text, cx, cz, rw, rh) {
   sprite.renderOrder = 10;
 
   const aspect = canvas.width / canvas.height;
-  const baseScale = Math.min(Math.max(rw, rh) * 0.55, 3);
+  const baseScale = Math.min(Math.max(rw, rh) * 0.42, 2.4);
   sprite.scale.set(baseScale * aspect, baseScale, 1);
 
   sprite.userData.isLabel = true;

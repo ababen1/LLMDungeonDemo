@@ -22,9 +22,11 @@ const SIZE_TIERS = {
  * @param {number} density 1-5
  */
 export function deriveParams(seed, difficulty, density) {
-  const gridW = 10 + Math.round(((density - 1) * 15) / 4);
+  // Higher density → smaller grid (10 at max density, 25 at min)
+  const gridW = 25 - Math.round(((density - 1) * 15) / 4);
   const gridH = gridW;
-  const targetRoomCount = [4, 4, 5, 5, 5][difficulty - 1];
+  // Higher difficulty → more rooms (4 at min, 6 at max)
+  const targetRoomCount = Math.round(4 + ((difficulty - 1) * (6 - 4)) / 4);
   const targetCorridorCount = [2, 3, 3, 4, 4][difficulty - 1];
   const doorPlacementHint = DOOR_PLACEMENT_HINTS[difficulty - 1];
   const includeTreasure = targetRoomCount >= 5;

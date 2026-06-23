@@ -40,6 +40,13 @@ body {
   font-size: 0.875rem;
 }
 
+#sidebar label .hint {
+  font-size: 0.7rem;
+  color: #757575;
+  font-weight: normal;
+}
+
+
 #sidebar input[type='number'] {
   padding: 0.5rem;
   border: 1px solid #444;
@@ -225,13 +232,122 @@ body {
   cursor: pointer;
 }
 
-#canvas-container {
+#main-panel {
   flex: 1;
-  position: relative;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
 }
 
-.map-legend {
+.view-tabs {
+  display: flex;
+  gap: 0;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.view-tab {
+  padding: 0.65rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #9e9e9e;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.view-tab:hover {
+  color: #e0e0e0;
+  background: #222;
+}
+
+.view-tab-active {
+  color: #e0e0e0;
+  border-bottom-color: #4caf50;
+}
+
+.view-panel {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.view-hidden {
+  display: none;
+}
+
+.json-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+}
+
+.json-toolbar button {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.json-toolbar button:hover {
+  background: #333;
+}
+
+.json-validate-result {
+  padding: 0.65rem 1rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  border-bottom: 1px solid #333;
+  min-height: 2rem;
+}
+
+.json-validate-idle:empty {
+  display: none;
+}
+
+.json-validate-success {
+  color: #81c784;
+  background: #1a2e1a;
+}
+
+.json-validate-error {
+  color: #e57373;
+  background: #2e1a1a;
+}
+
+.json-output {
+  flex: 1;
+  margin: 0;
+  padding: 1rem;
+  overflow: auto;
+  height: calc(100vh - 120px);
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #e0e0e0;
+  background: #141414;
+}
+
+#json-view {
+  display: flex;
+  flex-direction: column;
+}
+
+#map-view {
+  flex: 1;
+  min-height: 0;
+}
+
+#map-view .map-legend {
   position: absolute;
   top: 1rem;
   right: 1rem;

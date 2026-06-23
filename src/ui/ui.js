@@ -98,6 +98,13 @@ export function initUI({ onGenerate }) {
   }
 
   return {
+    getParams() {
+      return {
+        seed: clampInt(parseInt(seedInput.value, 10), 0, 999999),
+        difficulty: clampInt(parseInt(difficultyInput.value, 10), 1, 5),
+        density: clampInt(parseInt(densityInput.value, 10), 1, 5),
+      };
+    },
     setRunning(isRunning) {
       running = isRunning;
       generateBtn.disabled = isRunning;

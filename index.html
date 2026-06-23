@@ -17,10 +17,12 @@
         </label>
         <label>
           Difficulty: <span id="difficulty-label">3</span>
+          <span class="hint">more rooms</span>
           <input id="difficulty" type="range" min="1" max="5" step="1" value="3" />
         </label>
         <label>
           Density: <span id="density-label">3</span>
+          <span class="hint">smaller grid</span>
           <input id="density" type="range" min="1" max="5" step="1" value="3" />
         </label>
         <button id="generate">Generate</button>
@@ -33,9 +35,23 @@
           <div id="log" class="log-content" aria-live="polite"></div>
         </div>
       </aside>
-      <main id="canvas-container">
-        <div id="map-legend" class="map-legend"></div>
-        <canvas id="dungeon-canvas"></canvas>
+      <main id="main-panel">
+        <div class="view-tabs" role="tablist">
+          <button id="tab-map" type="button" class="view-tab view-tab-active" role="tab" aria-selected="true">Map</button>
+          <button id="tab-json" type="button" class="view-tab" role="tab" aria-selected="false">JSON</button>
+        </div>
+        <div id="map-view" class="view-panel" role="tabpanel">
+          <div id="map-legend" class="map-legend"></div>
+          <canvas id="dungeon-canvas"></canvas>
+        </div>
+        <div id="json-view" class="view-panel view-hidden" role="tabpanel">
+          <div class="json-toolbar">
+            <button id="copy-json" type="button">Copy JSON</button>
+            <button id="validate-json" type="button">Validate</button>
+          </div>
+          <div id="json-validate-result" class="json-validate-result json-validate-idle"></div>
+          <pre id="json-output" class="json-output">No dungeon generated yet.</pre>
+        </div>
       </main>
     </div>
     <script type="module" src="/src/main.js"></script>
