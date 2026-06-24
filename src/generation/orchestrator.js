@@ -51,7 +51,7 @@ export async function generateDungeon(params, { onStatus, onDungeon, renderer, l
       apiKeySet: Boolean(config.apiKey),
     });
 
-    if (!config.apiKey) {
+    if (!config.apiKey && config.requiresApiKey !== false) {
       const msg = 'Set VITE_LLM_API_KEY in .env';
       log.error('Missing API key', msg);
       onStatus(msg, 'error');

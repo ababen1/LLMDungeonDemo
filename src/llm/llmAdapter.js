@@ -1,3 +1,4 @@
+import * as localChatProvider from './providers/localChatProvider.js';
 import * as groqProvider from './providers/groqProvider.js';
 import * as openaiProvider from './providers/openaiProvider.js';
 import * as anthropicProvider from './providers/anthropicProvider.js';
@@ -27,6 +28,7 @@ import * as genericRestProvider from './providers/genericRestProvider.js';
  */
 
 const PROVIDERS = {
+  local: localChatProvider,
   groq: groqProvider,
   openai: openaiProvider,
   anthropic: anthropicProvider,

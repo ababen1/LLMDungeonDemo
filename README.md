@@ -17,10 +17,23 @@ Open http://localhost:5173
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_LLM_PROVIDER` | `groq` (default), `openai`, `anthropic`, or `generic` |
-| `VITE_LLM_API_KEY` | Groq API key ([console.groq.com](https://console.groq.com)) |
-| `VITE_LLM_MODEL` | Model name (default: `llama-3.3-70b-versatile`) |
-| `VITE_LLM_BASE_URL` | Groq OpenAI-compatible base (default: `https://api.groq.com/openai`) |
+| `VITE_LLM_PROVIDER` | `groq` (default), `local`, `openai`, `anthropic`, or `generic` |
+| `VITE_LLM_API_KEY` | API key (not required for `local`) |
+| `VITE_LLM_MODEL` | Model name (local default: `google/gemma-4-e4b`) |
+| `VITE_LLM_BASE_URL` | API endpoint (optional for `local` in dev — uses `/api/v1/chat/` proxy) |
+| `VITE_LOCAL_LLM_PROXY_TARGET` | LAN LLM server URL for Vite proxy (set in `.env` only, e.g. `http://your-host:1234`) |
+
+### Local network LLM (`local`)
+
+Uses `{ model, input }` POST body. **In dev**, requests go through a Vite proxy to avoid browser CORS. Set your server URL in `.env` (not committed):
+
+```env
+VITE_LLM_PROVIDER=local
+VITE_LLM_MODEL=google/gemma-4-e4b
+VITE_LOCAL_LLM_PROXY_TARGET=http://your-llm-host:1234
+```
+
+Do not set `VITE_LLM_BASE_URL` to the LAN IP in the browser — use the proxy (omit `VITE_LLM_BASE_URL` or set `/api/v1/chat/`). Restart `npm run dev` after changing `.env`.
 
 ## Architecture
 
