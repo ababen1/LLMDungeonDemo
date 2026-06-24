@@ -41,7 +41,14 @@
           <button id="tab-json" type="button" class="view-tab" role="tab" aria-selected="false">JSON</button>
         </div>
         <div id="map-view" class="view-panel" role="tabpanel">
-          <div id="map-legend" class="map-legend"></div>
+          <div id="map-overlay" class="map-overlay">
+            <div id="map-legend" class="map-legend"></div>
+            <div id="map-zoom" class="map-zoom" aria-label="Map zoom controls">
+              <button id="zoom-in" type="button" class="map-zoom-btn" title="Zoom in" aria-label="Zoom in">+</button>
+              <button id="zoom-reset" type="button" class="map-zoom-btn" title="Reset zoom" aria-label="Reset zoom">⟲</button>
+              <button id="zoom-out" type="button" class="map-zoom-btn" title="Zoom out" aria-label="Zoom out">−</button>
+            </div>
+          </div>
           <canvas id="dungeon-canvas"></canvas>
         </div>
         <div id="json-view" class="view-panel view-hidden" role="tabpanel">

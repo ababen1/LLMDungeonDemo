@@ -1,6 +1,7 @@
 import { initUI } from './ui/ui.js';
 import { initJsonTab } from './ui/jsonTab.js';
 import { renderLegend } from './ui/legend.js';
+import { initZoomControls } from './ui/zoomControls.js';
 import { DungeonRenderer } from './render/renderer.js';
 import { generateDungeon } from './generation/orchestrator.js';
 
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('dungeon-canvas'));
   const renderer = new DungeonRenderer();
   renderer.init(canvas);
+  initZoomControls(renderer, document.getElementById('map-zoom'));
 
   let jsonTab;
 

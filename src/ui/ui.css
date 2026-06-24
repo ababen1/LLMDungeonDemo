@@ -345,20 +345,56 @@ body {
 #map-view {
   flex: 1;
   min-height: 0;
+  position: relative;
 }
 
-#map-view .map-legend {
+#map-view .map-overlay {
   position: absolute;
   top: 1rem;
   right: 1rem;
   z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+#map-view .map-legend {
   background: rgba(20, 20, 20, 0.92);
   border: 1px solid #444;
   border-radius: 6px;
   padding: 0.65rem 0.85rem;
   font-size: 0.75rem;
-  pointer-events: none;
   max-width: 160px;
+}
+
+#map-view .map-zoom {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  pointer-events: auto;
+}
+
+.map-zoom-btn {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: rgba(20, 20, 20, 0.92);
+  color: #e0e0e0;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.map-zoom-btn:hover {
+  background: #333;
+  border-color: #777;
+}
+
+.map-zoom-btn:active {
+  background: #444;
 }
 
 .legend-title {
