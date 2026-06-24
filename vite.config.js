@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
     : undefined;
 
   return {
+    base: process.env.GITHUB_ACTIONS ? '/LLMDungeonDemo/' : '/',
     root: '.',
     publicDir: 'public',
     build: {
