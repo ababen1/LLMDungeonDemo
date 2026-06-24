@@ -98,6 +98,7 @@ export async function generateDungeon(params, { onStatus, onDungeon, renderer, l
     }
 
     let abstract = tryParse(raw.content, log);
+    let lastAssistantContent = raw.content;
     let result = abstract
       ? validateAbstract(abstract, params, derived)
       : { ok: false, violations: [{ code: 'PARSE_ERROR', detail: 'Failed to parse JSON from model response' }] };
@@ -109,64 +110,70 @@ export async function generateDungeon(params, { onStatus, onDungeon, renderer, l
     });
 
     if (!result.ok) {
-      onStatus('Repairing layout…', 'info');
-      log.step('Repairing layout (LLM call)', {
-        budgetMs: REPAIR_BUDGET_MS,
-        violations: result.violations,
-      });
-
-      const repairMessages = [
-        ...messages,
-        { role: 'assistant', content: raw.content },
-        {
-          role: 'user',
-          content: buildRepairPrompt({
-            params,
-            derived,
-            invalidJson: abstract ?? raw.content,
-            violations: result.violations,
-          }),
-        },
-      ];
-
-      const repairRequest = {
-        provider: adapter.name,
-        model: config.model,
-        temperature: 0,
-        maxTokens: 1500,
-        seed: adapter.supportsSeed ? params.seed : undefined,
-        messages: repairMessages,
-      };
-      log.request('Repair request', repairRequest);
-
-      try {
-        const repairRaw = await deadline.race(
-          adapter.complete({
-            messages: repairMessages,
-            temperature: 0,
-            maxTokens: 1500,
-            seed: adapter.supportsSeed ? params.seed : undefined,
-            signal: deadline.signal,
-          }),
-          REPAIR_BUDGET_MS
-        );
-        log.response('Repair response', {
-          latencyMs: repairRaw.latencyMs,
-          content: repairRaw.content,
-        });
-
-        abstract = tryParse(repairRaw.content, log);
-        result = abstract
-          ? validateAbstract(abstract, params, derived)
-          : { ok: false, violations: [{ code: 'PARSE_ERROR', detail: 'Repair response parse failed' }] };
-
-        log.info('Abstract validation (after repair)', {
-          ok: result.ok,
+      const maxAbstractRepairs = 2;
+      for (let repairAttempt = 0; repairAttempt < maxAbstractRepairs && !result.ok; repairAttempt++) {
+        onStatus(`Repairing layout${repairAttempt > 0 ? ' (retry)' : ''}…`, 'info');
+        log.step('Repairing layout (LLM call)', {
+          attempt: repairAttempt + 1,
+          budgetMs: REPAIR_BUDGET_MS,
           violations: result.violations,
-          parsed: abstract,
         });
-      } catch (e) {
-        return handleError(e, onStatus, log);
+
+        const repairMessages = [
+          ...messages,
+          { role: 'assistant', content: lastAssistantContent },
+          {
+            role: 'user',
+            content: buildRepairPrompt({
+              params,
+              derived,
+              invalidJson: abstract ?? lastAssistantContent,
+              violations: result.violations,
+            }),
+          },
+        ];
+
+        const repairRequest = {
+          provider: adapter.name,
+          model: config.model,
+          temperature: 0,
+          maxTokens: 1500,
+          seed: adapter.supportsSeed ? params.seed : undefined,
+          messages: repairMessages,
+        };
+        log.request('Repair request', repairRequest);
+
+        try {
+          const repairRaw = await deadline.race(
+            adapter.complete({
+              messages: repairMessages,
+              temperature: 0,
+              maxTokens: 1500,
+              seed: adapter.supportsSeed ? params.seed : undefined,
+              signal: deadline.signal,
+            }),
+            REPAIR_BUDGET_MS
+          );
+          log.response('Repair response', {
+            latencyMs: repairRaw.latencyMs,
+            content: repairRaw.content,
+          });
+
+          abstract = tryParse(repairRaw.content, log);
+          lastAssistantContent = repairRaw.content;
+          result = abstract
+            ? validateAbstract(abstract, params, derived)
+            : { ok: false, violations: [{ code: 'PARSE_ERROR', detail: 'Repair response parse failed' }] };
+
+          log.info('Abstract validation (after repair)', {
+            attempt: repairAttempt + 1,
+            ok: result.ok,
+            violations: result.violations,
+            parsed: abstract,
+          });
+        } catch (e) {
+          return handleError(e, onStatus, log);
+        }
       }
     }
 
@@ -181,7 +188,7 @@ export async function generateDungeon(params, { onStatus, onDungeon, renderer, l
     log.step('Compiling geometry', { abstract });
 
     const compiled = compileLayout(abstract, derived);
-    const compiledResult = validateCompiled(compiled);
+    let compiledResult = validateCompiled(compiled);
 
     log.info('Compiled validation', {
       ok: compiledResult.ok,
@@ -190,10 +197,79 @@ export async function generateDungeon(params, { onStatus, onDungeon, renderer, l
     });
 
     if (!compiledResult.ok) {
-      const msg = `Compile validation failed: ${formatViolations(compiledResult.violations)}`;
-      log.error('Compile validation failed', { violations: compiledResult.violations });
-      onStatus(msg, 'error');
-      return;
+      onStatus('Repairing layout (compile constraints)…', 'info');
+      log.step('Repairing layout after compile validation', {
+        budgetMs: REPAIR_BUDGET_MS,
+        violations: compiledResult.violations,
+      });
+
+      const repairMessages = [
+        ...messages,
+        { role: 'assistant', content: lastAssistantContent },
+        {
+          role: 'user',
+          content: buildRepairPrompt({
+            params,
+            derived,
+            invalidJson: abstract,
+            violations: compiledResult.violations,
+          }),
+        },
+      ];
+
+      try {
+        const repairRaw = await deadline.race(
+          adapter.complete({
+            messages: repairMessages,
+            temperature: 0,
+            maxTokens: 1500,
+            seed: adapter.supportsSeed ? params.seed : undefined,
+            signal: deadline.signal,
+          }),
+          REPAIR_BUDGET_MS
+        );
+        log.response('Compile repair response', {
+          latencyMs: repairRaw.latencyMs,
+          content: repairRaw.content,
+        });
+
+        abstract = tryParse(repairRaw.content, log);
+        result = abstract
+          ? validateAbstract(abstract, params, derived)
+          : { ok: false, violations: [{ code: 'PARSE_ERROR', detail: 'Compile repair response parse failed' }] };
+
+        if (!result.ok) {
+          const msg = `Validation failed: ${formatViolations(result.violations)}`;
+          log.error('Abstract validation failed after compile repair', { violations: result.violations });
+          onStatus(msg, 'error');
+          return;
+        }
+
+        const recompiled = compileLayout(abstract, derived);
+        compiledResult = validateCompiled(recompiled);
+        log.info('Compiled validation (after repair)', {
+          ok: compiledResult.ok,
+          violations: compiledResult.violations,
+          compiled: recompiled,
+        });
+
+        if (!compiledResult.ok) {
+          const msg = `Compile validation failed: ${formatViolations(compiledResult.violations)}`;
+          log.error('Compile validation failed after repair', { violations: compiledResult.violations });
+          onStatus(msg, 'error');
+          return;
+        }
+
+        renderer.render(recompiled);
+        onDungeon?.(recompiled);
+        const summary = `${recompiled.rooms.length} rooms, ${recompiled.corridors.length} corridors, grid ${derived.gridW}×${derived.gridH}`;
+        const elapsed = deadline.elapsed();
+        log.step('Render complete', { summary, elapsedMs: elapsed });
+        onStatus(`Rendered in ${elapsed}ms — ${summary}`, 'success');
+        return;
+      } catch (e) {
+        return handleError(e, onStatus, log);
+      }
     }
 
     renderer.render(compiled);

@@ -70,8 +70,51 @@ export function checkGeometry(compiled) {
             code: 'CORRIDOR_INVALID',
             detail: `Corridor ${corridor.id} passes through interior of ${room.id}`,
           });
+        } else if (
+          room.id !== corridor.from &&
+          room.id !== corridor.to &&
+          onRoomPerimeter([px, py], room)
+        ) {
+          violations.push({
+            code: 'CORRIDOR_INVALID',
+            detail: `Corridor ${corridor.id} passes along perimeter of unrelated room ${room.id}`,
+          });
         }
       }
+    }
+
+    for (const [px, py] of path) {
+      for (const room of rooms) {
+        if (room.id === corridor.from || room.id === corridor.to) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = px + dx;
+          const ny = py + dy;
+          const [rx, ry] = room.pos;
+          const [rw, rh] = room.size;
+          if (nx >= rx && nx < rx + rw && ny >= ry && ny < ry + rh) {
+            violations.push({
+              code: 'CORRIDOR_INVALID',
+              detail: `Corridor ${corridor.id} is adjacent to unrelated room ${room.id}`,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  const cellOwners = new Map();
+  for (const corridor of compiled.corridors) {
+    for (const [px, py] of corridor.path) {
+      const key = `${px},${py}`;
+      const onRoom = rooms.some((room) => onRoomPerimeter([px, py], room));
+      if (onRoom) continue;
+      if (cellOwners.has(key) && cellOwners.get(key) !== corridor.id) {
+        violations.push({
+          code: 'CORRIDOR_INVALID',
+          detail: `Corridors ${cellOwners.get(key)} and ${corridor.id} share cell [${px},${py}]`,
+        });
+      }
+      cellOwners.set(key, corridor.id);
     }
   }
 

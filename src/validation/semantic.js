@@ -1,4 +1,5 @@
 import { buildGraph, bfs, shortestPath, countLoops, getRoomByType } from './graph.js';
+import { countCorridorLoops } from './spatialSemantic.js';
 
 /**
  * Semantic checks on abstract or compiled layout (graph topology only).
@@ -46,6 +47,22 @@ export function checkSemantic(layout, graph) {
     }
   }
 
+  const exitNeighbors = neighborsOf(graph, exit.id);
+  if (exitNeighbors.length !== 1 || exitNeighbors[0] !== key.id) {
+    violations.push({
+      code: 'DOOR_NOT_BLOCKING',
+      detail: `exit_room must connect only to key_room via the door corridor (found: [${exitNeighbors.join(', ')}])`,
+    });
+  }
+
+  const keyNeighbors = neighborsOf(graph, key.id);
+  if (keyNeighbors.length < 2 || !keyNeighbors.includes(exit.id)) {
+    violations.push({
+      code: 'KEY_AFTER_DOOR',
+      detail: `key_room must connect to the hub chain and exit_room (${keyNeighbors.length} corridors touch key)`,
+    });
+  }
+
   const keyReachableBeforeDoor = bfs(graph, spawn.id, {
     excludeEdge: [doorBlocks[0], doorBlocks[1]],
   });
@@ -73,6 +90,15 @@ export function checkSemantic(layout, graph) {
   }
 
   return violations;
+}
+
+function neighborsOf(graph, nodeId) {
+  const neighbors = new Set();
+  for (const [a, b] of graph.edges) {
+    if (a === nodeId) neighbors.add(b);
+    else if (b === nodeId) neighbors.add(a);
+  }
+  return [...neighbors];
 }
 
 /**
@@ -107,8 +133,8 @@ export function checkSelfCheck(layout, semanticViolations) {
     violations.push({ code: 'SELFCHECK_DISHONEST', detail: 'connected true but graph disconnected' });
   }
 
-  const graph = buildGraph(layout);
-  const actualLoops = countLoops(graph);
+  const isCompiled = Boolean(layout.rooms[0]?.pos);
+  const actualLoops = isCompiled ? countCorridorLoops(layout) : countLoops(buildGraph(layout));
   if (sc.loops !== actualLoops && actualLoops <= 1) {
     if (sc.loops === 0 && actualLoops === 1) {
       violations.push({ code: 'SELFCHECK_DISHONEST', detail: 'loops count mismatch' });

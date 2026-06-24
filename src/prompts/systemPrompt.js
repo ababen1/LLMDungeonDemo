@@ -19,10 +19,10 @@ REQUIRED LAYOUT ELEMENTS:
 - Corridor segments: use targetCorridorCount from the user message (rooms-1 for a tree, or +1 for one optional loop). Each corridor connects two room ids via "from" and "to" — NO path coordinates
 
 SEMANTIC CONSTRAINTS (must all be true):
-1. keyBeforeDoor: The key room is reachable from spawn without passing through the locked door edge.
-2. doorBlocksCriticalPath: With the door closed (edge between blocks rooms removed), spawn cannot reach exit. With door open, exit is reachable.
+1. keyBeforeDoor: Remove the door corridor edge from the graph mentally. Spawn must still reach key_room via other corridors.
+2. doorBlocksCriticalPath: With that same edge removed, spawn must NOT reach exit_room. exit_room may only connect to key_room via the door corridor — no other corridor may touch exit_room.
 3. treasureOptional: If treasure room exists, it is NOT on the shortest spawn→exit path when the door is open.
-4. connected: Every room is reachable from every other room via corridor edges (room adjacency is added later by code).
+4. connected: Every room is reachable from every other room via corridor edges.
 5. loops: The room connectivity graph has cyclomatic number ≤ 1 (at most one optional loop). cyclomatic = E - V + 1 for connected graph.
 
 JSON SCHEMA (all fields required unless noted):
@@ -69,13 +69,12 @@ JSON SCHEMA (all fields required unless noted):
 DO NOT include: pos, size arrays, corridor path arrays, door.position, or gridSize in metadata.
 
 PLANNING PROCEDURE (inside <think>):
-1. State target room count and list room ids/types.
+1. State target room count and list room ids/types (follow MANDATORY TOPOLOGY from user message).
 2. Assign quadrant anchors respecting placement hints; pick size tiers.
-3. Add corridor edges forming a connected graph; use exactly targetCorridorCount (or +1 only if you need one loop).
-4. Place locked door on the corridor connecting blocks rooms; verify key reachable before door edge.
-5. Verify spawn→exit is blocked when door edge removed.
-6. Place treasure off critical path if present.
-7. Count loops; ensure ≤ 1.
-8. Fill selfCheck honestly; revise plan if any check would be false.
+3. Add corridor edges exactly as the recipe describes; door ONLY on key_room → exit_room corridor.
+4. Verify: with door edge removed, BFS from spawn reaches key but not exit.
+5. Place treasure on a side branch only (if present).
+6. Count loops; ensure ≤ 1.
+7. Fill selfCheck honestly; revise plan if any check would be false.
 
 Emit the JSON object only after the thinking block is complete.`;

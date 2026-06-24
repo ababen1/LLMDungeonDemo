@@ -1,8 +1,6 @@
 import { deriveParams } from '../schema/paramDerivation.js';
 import { validateAbstract } from './abstractValidator.js';
 import { validateCompiled } from './compiledValidator.js';
-import { buildGraph } from './graph.js';
-import { checkSemantic, checkSelfCheck } from './semantic.js';
 
 /**
  * @param {unknown} json
@@ -61,13 +59,6 @@ export function validateDungeonJson(json, params = null) {
     const violations = [];
     const compiledResult = validateCompiled(json);
     violations.push(...compiledResult.violations);
-
-    if (compiledResult.ok) {
-      const graph = buildGraph(json);
-      const semanticViolations = checkSemantic(json, graph);
-      violations.push(...semanticViolations);
-      violations.push(...checkSelfCheck(json, semanticViolations));
-    }
 
     const p = params ?? inferParamsFromMetadata(json);
     if (p && json.metadata) {

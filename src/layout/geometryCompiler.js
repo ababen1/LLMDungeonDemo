@@ -1,14 +1,45 @@
 import { createRng } from '../utils/seededRng.js';
 import { quadrantToAnchor, resolveRoomSize } from '../schema/paramDerivation.js';
+import { checkSpatialSemantic } from '../validation/spatialSemantic.js';
+import { checkGeometry } from '../validation/geometry.js';
 
 /**
  * Deterministically compile abstract layout → pixel-perfect grid coordinates.
+ * Retries routing with a seed offset when spatial constraints fail.
  * @param {object} abstract
  * @param {object} derived
+ * @param {{ maxAttempts?: number }} [options]
  * @returns {object} compiled dungeon
  */
-export function compileLayout(abstract, derived) {
-  const rng = createRng(derived.seed);
+export function compileLayout(abstract, derived, options = {}) {
+  const maxAttempts = options.maxAttempts ?? 8;
+  let lastCompiled = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    lastCompiled = compileLayoutOnce(abstract, derived, attempt);
+    const geometryViolations = checkGeometry(lastCompiled);
+    const spatialViolations = checkSpatialSemantic(lastCompiled);
+    const blocking = [...geometryViolations, ...spatialViolations].filter((v) =>
+      [
+        'KEY_AFTER_DOOR',
+        'DOOR_NOT_BLOCKING',
+        'DOOR_BLOCKS_PERMANENTLY',
+        'NOT_CONNECTED',
+        'CORRIDOR_INVALID',
+        'DOOR_POSITION_INVALID',
+        'ROOM_OVERLAP',
+      ].includes(v.code)
+    );
+    if (blocking.length === 0) {
+      return lastCompiled;
+    }
+  }
+
+  return lastCompiled;
+}
+
+function compileLayoutOnce(abstract, derived, attempt) {
+  const rng = createRng(derived.seed + attempt * 7919);
   const [gridW, gridH] = derived.gridSize;
   const placedRooms = [];
 
@@ -35,11 +66,28 @@ export function compileLayout(abstract, derived) {
 
   const roomById = Object.fromEntries(placedRooms.map((r) => [r.id, r]));
   const compiledCorridors = [];
+  const usedCorridorCells = new Set();
+  const doorCorridorId = abstract.doors[0]?.onCorridor;
+  const corridorOrder = [...abstract.corridors].sort((a, b) => {
+    if (a.id === doorCorridorId) return -1;
+    if (b.id === doorCorridorId) return 1;
+    return a.id.localeCompare(b.id);
+  });
 
-  for (const corridor of abstract.corridors) {
+  for (const corridor of corridorOrder) {
     const fromRoom = roomById[corridor.from];
     const toRoom = roomById[corridor.to];
-    const path = routeCorridor(fromRoom, toRoom, placedRooms, gridW, gridH, rng, corridor.id);
+    const path = routeCorridor(
+      fromRoom,
+      toRoom,
+      placedRooms,
+      gridW,
+      gridH,
+      rng,
+      corridor.id,
+      usedCorridorCells
+    );
+    reserveCorridorCells(path, usedCorridorCells);
     compiledCorridors.push({
       id: corridor.id,
       from: corridor.from,
@@ -126,7 +174,7 @@ function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-function routeCorridor(fromRoom, toRoom, allRooms, gridW, gridH, rng, corridorId) {
+function routeCorridor(fromRoom, toRoom, allRooms, gridW, gridH, rng, corridorId, usedCorridorCells) {
   const starts = rankPerimeterPoints(fromRoom, toRoom, rng, corridorId, 'start');
   const ends = rankPerimeterPoints(toRoom, fromRoom, rng, corridorId, 'end');
 
@@ -144,12 +192,32 @@ function routeCorridor(fromRoom, toRoom, allRooms, gridW, gridH, rng, corridorId
     return `${a.e[0]},${a.e[1]}`.localeCompare(`${b.e[0]},${b.e[1]}`);
   });
 
+  const corridorRooms = new Set([fromRoom.id, toRoom.id]);
   for (const { s, e } of pairs) {
-    const path = bfsCorridorPath(s, e, allRooms, gridW, gridH);
-    if (path) return path;
+    const path = bfsCorridorPath(s, e, allRooms, gridW, gridH, corridorRooms, usedCorridorCells);
+    if (path && !pathUsesReservedInterior(path, allRooms, usedCorridorCells)) {
+      return path;
+    }
   }
 
   return [starts[0], ends[0]];
+}
+
+function reserveCorridorCells(path, usedCorridorCells) {
+  for (const point of path) {
+    usedCorridorCells.add(pointKey(point));
+  }
+}
+
+function pathUsesReservedInterior(path, allRooms, usedCorridorCells) {
+  for (const point of path) {
+    if (usedCorridorCells.has(pointKey(point))) return true;
+  }
+  return false;
+}
+
+function onAnyRoomPerimeter([px, py], allRooms) {
+  return allRooms.some((room) => onRoomPerimeter(px, py, room));
 }
 
 /**
@@ -213,7 +281,7 @@ const BFS_NEIGHBORS = [
  * Grid BFS — every step is orthogonal; no skipped cells.
  * Walkable: empty cells and room perimeters (not strict interiors).
  */
-function bfsCorridorPath(start, end, allRooms, gridW, gridH) {
+function bfsCorridorPath(start, end, allRooms, gridW, gridH, corridorRooms, usedCorridorCells) {
   const endKey = pointKey(end);
   const parent = new Map();
   parent.set(pointKey(start), null);
@@ -230,7 +298,7 @@ function bfsCorridorPath(start, end, allRooms, gridW, gridH) {
       const ny = y + dy;
       const nk = pointKey([nx, ny]);
       if (parent.has(nk)) continue;
-      if (!isWalkable(nx, ny, allRooms, gridW, gridH)) continue;
+      if (!isWalkable(nx, ny, allRooms, gridW, gridH, corridorRooms, usedCorridorCells)) continue;
       parent.set(nk, [x, y]);
       queue.push([nx, ny]);
     }
@@ -253,12 +321,37 @@ function reconstructPath(parent, end) {
   return path;
 }
 
-function isWalkable(x, y, allRooms, gridW, gridH) {
+function isWalkable(x, y, allRooms, gridW, gridH, corridorRooms, usedCorridorCells) {
   if (x < 0 || y < 0 || x >= gridW || y >= gridH) return false;
+  if (usedCorridorCells.has(pointKey([x, y]))) return false;
+  if (touchesForeignRoomFloor(x, y, allRooms, corridorRooms)) return false;
   for (const room of allRooms) {
     if (isStrictInterior(x, y, room)) return false;
+    if (onRoomPerimeter(x, y, room) && !corridorRooms.has(room.id)) return false;
   }
   return true;
+}
+
+function touchesForeignRoomFloor(x, y, allRooms, corridorRooms) {
+  for (const [dx, dy] of BFS_NEIGHBORS) {
+    const nx = x + dx;
+    const ny = y + dy;
+    for (const room of allRooms) {
+      if (corridorRooms.has(room.id)) continue;
+      const [rx, ry] = room.pos;
+      const [rw, rh] = room.size;
+      if (nx >= rx && nx < rx + rw && ny >= ry && ny < ry + rh) return true;
+    }
+  }
+  return false;
+}
+
+function onRoomPerimeter(px, py, room) {
+  const [rx, ry] = room.pos;
+  const [rw, rh] = room.size;
+  const onVertical = (px === rx || px === rx + rw - 1) && py >= ry && py < ry + rh;
+  const onHorizontal = (py === ry || py === ry + rh - 1) && px >= rx && px < rx + rw;
+  return onVertical || onHorizontal;
 }
 
 function isStrictInterior(px, py, room) {
