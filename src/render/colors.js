@@ -6,7 +6,7 @@ export const COLORS = {
   connector: 0x78909c,
   corridor: 0xb0bec5,
   lockedDoor: 0xff5722,
-  room: 0x37474f,
+  wall: 0x37474f,
   background: 0x212121,
 };
 
@@ -19,7 +19,7 @@ export const COLOR_HEX = {
   connector: '#78909c',
   corridor: '#b0bec5',
   lockedDoor: '#ff5722',
-  room: '#37474f',
+  wall: '#37474f',
 };
 
 /** Human-readable labels for room types and map elements. */
@@ -31,7 +31,7 @@ export const TYPE_LABELS = {
   connector: 'Connector',
   corridor: 'Corridor',
   lockedDoor: 'Locked door',
-  room: 'Room',
+  wall: 'Wall',
 };
 
 /** Sidebar / overlay legend entries in display order. */
@@ -43,5 +43,5 @@ export const LEGEND_ITEMS = [
   { key: 'connector', label: TYPE_LABELS.connector },
   { key: 'corridor', label: TYPE_LABELS.corridor },
   { key: 'lockedDoor', label: TYPE_LABELS.lockedDoor },
-  { key: 'room', label: TYPE_LABELS.room },
+  { key: 'wall', label: TYPE_LABELS.wall },
 ];
