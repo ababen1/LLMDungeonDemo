@@ -27,7 +27,9 @@ export function deriveParams(seed, difficulty, density) {
   const gridH = gridW;
   // Higher difficulty → more rooms (4 at min, 6 at max)
   const targetRoomCount = Math.round(4 + ((difficulty - 1) * (6 - 4)) / 4);
-  const targetCorridorCount = [2, 3, 3, 4, 4][difficulty - 1];
+  const { min: minCorridors, max: maxCorridors } = corridorBounds(targetRoomCount);
+  const targetCorridorCount = minCorridors;
+  const targetCorridorCountMax = maxCorridors;
   const doorPlacementHint = DOOR_PLACEMENT_HINTS[difficulty - 1];
   const includeTreasure = targetRoomCount >= 5;
 
@@ -51,6 +53,7 @@ export function deriveParams(seed, difficulty, density) {
     gridSize: [gridW, gridH],
     targetRoomCount,
     targetCorridorCount,
+    targetCorridorCountMax,
     doorPlacementHint,
     includeTreasure,
     spawnQuadrant,
@@ -59,6 +62,16 @@ export function deriveParams(seed, difficulty, density) {
     treasureQuadrant,
     sizeTiers: SIZE_TIERS,
   };
+}
+
+/**
+ * Valid corridor counts for a connected graph with at most one loop.
+ * Tree needs rooms-1 edges; one optional loop adds at most one edge.
+ */
+export function corridorBounds(roomCount) {
+  const min = Math.max(2, roomCount - 1);
+  const max = roomCount;
+  return { min, max };
 }
 
 /**

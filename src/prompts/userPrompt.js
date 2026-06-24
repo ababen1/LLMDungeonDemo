@@ -11,7 +11,7 @@ density: ${density} (1=largest grid 25×25, 5=smallest grid 10×10)
 
 DERIVED TARGETS (follow exactly):
 - targetRoomCount: ${derived.targetRoomCount} (includes spawn, exit, key; add treasure if count >= 5; fill remainder with type "connector")
-- targetCorridorCount: ${derived.targetCorridorCount}
+- targetCorridorCount: ${derived.targetCorridorCount} (minimum for connectivity; use ${derived.targetCorridorCountMax} only if adding one optional loop)
 - lockedDoorPlacement: ${derived.doorPlacementHint}
 
 PLACEMENT HINTS (seed-derived, assign anchor.quadrant accordingly):

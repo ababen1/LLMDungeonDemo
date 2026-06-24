@@ -16,7 +16,7 @@ REQUIRED LAYOUT ELEMENTS:
 - 0 or 1 room with type "treasure" (include treasure when target room count is 5+)
 - 0 or more rooms with type "connector" (generic rooms to reach target room count)
 - Total rooms: 4 to 6 inclusive
-- Corridor segments: 2 to 4 inclusive (each corridor connects two room ids via "from" and "to" — NO path coordinates)
+- Corridor segments: use targetCorridorCount from the user message (rooms-1 for a tree, or +1 for one optional loop). Each corridor connects two room ids via "from" and "to" — NO path coordinates
 
 SEMANTIC CONSTRAINTS (must all be true):
 1. keyBeforeDoor: The key room is reachable from spawn without passing through the locked door edge.
@@ -71,7 +71,7 @@ DO NOT include: pos, size arrays, corridor path arrays, door.position, or gridSi
 PLANNING PROCEDURE (inside <think>):
 1. State target room count and list room ids/types.
 2. Assign quadrant anchors respecting placement hints; pick size tiers.
-3. Add 2-4 corridor edges forming a connected graph; respect target corridor count.
+3. Add corridor edges forming a connected graph; use exactly targetCorridorCount (or +1 only if you need one loop).
 4. Place locked door on the corridor connecting blocks rooms; verify key reachable before door edge.
 5. Verify spawn→exit is blocked when door edge removed.
 6. Place treasure off critical path if present.

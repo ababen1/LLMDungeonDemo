@@ -1,3 +1,5 @@
+import { corridorBounds } from '../schema/paramDerivation.js';
+
 const ROOM_TYPES = ['spawn', 'exit', 'key', 'treasure', 'connector'];
 const SIZE_TIERS = ['small', 'medium', 'large'];
 const QUADRANTS = ['NW', 'NE', 'SW', 'SE'];
@@ -88,8 +90,12 @@ export function validateAbstractStructure(obj) {
     violations.push({ code: 'SCHEMA', detail: 'corridors must be an array' });
   } else {
     const corridors = layout.corridors;
-    if (corridors.length < 2 || corridors.length > 4) {
-      violations.push({ code: 'SCHEMA', detail: `corridors.length must be 2-4, got ${corridors.length}` });
+    const { min: minCorridors, max: maxCorridors } = corridorBounds(rooms.length);
+    if (corridors.length < minCorridors || corridors.length > maxCorridors) {
+      violations.push({
+        code: 'SCHEMA',
+        detail: `corridors.length must be ${minCorridors}-${maxCorridors} for ${rooms.length} rooms, got ${corridors.length}`,
+      });
     }
     const corridorIds = new Set();
     for (const c of corridors) {
