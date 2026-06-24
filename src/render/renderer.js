@@ -53,7 +53,7 @@ export class DungeonRenderer {
   _fitCamera(gridW, gridH) {
     if (!this.canvas || !this.camera) return;
     const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
-    const frustumSize = Math.max(gridW, gridH) + 4;
+    const frustumSize = Math.max(gridW, gridH) + 18;
     const halfH = frustumSize / 2;
     const halfW = (frustumSize * aspect) / 2;
     this.camera.left = -halfW;
