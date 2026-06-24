@@ -15,6 +15,8 @@ export async function complete(request, config) {
   const body = {
     model: config.model,
     input,
+    temperature: request.temperature,
+    max_tokens: request.maxTokens,
   };
 
   const headers = { 'Content-Type': 'application/json' };
